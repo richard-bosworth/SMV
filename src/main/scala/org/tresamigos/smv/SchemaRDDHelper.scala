@@ -39,7 +39,8 @@ class SchemaRDDHelper(schemaRDD: SchemaRDD) {
 
     //As far as I know the union maintain the order. So the header will end up being the
     //first line in the saved file.
-    val csvRDD = csvHeaderRDD.union(csvBodyRDD)
+    // val csvRDD = csvHeaderRDD.union(csvBodyRDD)
+    val csvRDD = csvBodyRDD
 
     schema.saveToFile(schemaRDD.context, Schema.dataPathToSchemaPath(dataPath))
     csvRDD.saveAsTextFile(dataPath)
