@@ -258,6 +258,17 @@ class EDD(val srdd: SchemaRDD,
     }
   }
 
+  /** save a local copy of report */
+  def saveReport(path: String): Unit = {
+    import java.io.{File, PrintWriter}
+    val file = new File(path)
+    // ensure parent directories exist
+    file.getParentFile.mkdirs
+    val pw = new PrintWriter(file)
+    createReport.collect.foreach(pw.println)
+    pw.close()
+  }
+
   /** Dump EDD report on screen */
   def dump: Unit = {
     createReport.collect.foreach(println)
