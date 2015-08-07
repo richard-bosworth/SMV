@@ -263,7 +263,7 @@ class EDD(val srdd: SchemaRDD,
     import java.io.{File, PrintWriter}
     val file = new File(path)
     // ensure parent directories exist
-    file.getParentFile.mkdirs
+    Option(file.getParentFile).foreach(_.mkdirs)
     val pw = new PrintWriter(file)
     createReport.collect.foreach(pw.println)
     pw.close()

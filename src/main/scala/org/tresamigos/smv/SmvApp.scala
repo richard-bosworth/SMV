@@ -63,6 +63,16 @@ abstract class SmvApp (val appName: String, private val cmdLineArgs: Seq[String]
   
   private[smv] val dataDir = sys.env.getOrElse("DATA_DIR", "/DATA_DIR_ENV_NOT_SET")
 
+  /** Returns the path for the module's csv output */
+  private[smv] def moduleCsvPath(mod: SmvModule): String =
+    s"""${dataDir}/output/${versionedNameInDev(mod)}.csv"""
+
+  @inline private def versionedNameInDev(mod: SmvModule): String =
+    if (isDevMode) mod.name + "_" + mod.versionSum() else mod.name
+
+  /** Returns the path for the module's edd */
+  private[this] def moduleEddPath(mod: SmvModule): String = moduleCsvPath(mod) + ".edd"
+
   /**
    * Get the RDD associated with data set.  The rdd plan (not data) is cached in the SmvDataSet
    * to ensure only a single SchemaRDD exists for a given data set (file/module).
@@ -163,11 +173,8 @@ abstract class SmvApp (val appName: String, private val cmdLineArgs: Seq[String]
         if (! isDevMode)
           modObject.persist(this, modResult)
 
-        // create edd dump of the module in this directory
-        cmdLineArgsConf.eddDir.get map { dir =>
-          val simpleName = module.split('.').last
-          modResult.edd.addBaseTasks().saveReport(s"${dir}/${simpleName}")
-        }
+        if (cmdLineArgsConf.genEdd())
+          modResult.edd.addBaseTasks().saveReport(moduleEddPath(modObject))
       }
     }
   }
@@ -181,15 +188,15 @@ private[smv] class CmdLineArgsConf(args: Seq[String]) extends ScallopConf(args) 
   val devMode = toggle("dev", default=Some(false),
     descrYes="enable dev mode (persist all intermediate module results",
     descrNo="enable production mode (all modules are evaluated from scratch")
+  val genEdd = toggle("edd", default = Some(false),
+    descrYes = "summarize data and generate an edd file in the same directory as csv and schema",
+    descrNo  = "do not summarize data")
   val graph = toggle("graph", default=Some(false),
     descrYes="generate a dependency graph of the given modules (modules are not run)",
     descrNo="do not generate a dependency graph")
   val json = toggle("json", default=Some(false),
     descrYes="generate a json object to represent entire app's module dependency (modules are not run)",
     descrNo="do not generate a json")
-
-  val eddDir = opt[String]("outdir",
-    descr = "if provided, dumps the module's edd to the specified output directory")
 
   val modules = trailArg[List[String]](descr="FQN of modules to run/graph")
 }
