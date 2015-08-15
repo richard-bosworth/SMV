@@ -138,8 +138,8 @@ abstract class SmvModule(val description: String) extends SmvDataSet {
     run(requiresDS().map(r => (r, app.resolveRDD(r))).toMap)
   }
 
-  private[smv] def persist(app: SmvApp, rdd: SchemaRDD) = {
-    val filePath = app.moduleCsvPath(this)
+  private[smv] def persist(app: SmvApp, rdd: SchemaRDD, prefix: String = "") = {
+    val filePath = app.moduleCsvPath(this, prefix)
     implicit val ca = CsvAttributes.defaultCsvWithHeader
     val fmt = DateTimeFormat.forPattern("HH:mm:ss")
     if (app.isDevMode){
@@ -159,16 +159,24 @@ abstract class SmvModule(val description: String) extends SmvDataSet {
     // Use the "cached" file that was just saved rather than cause an action
     // on the input RDD which may cause some expensive computation to re-occur.
     if (app.cmdLineArgsConf.genEdd())
-      readPersistedFile(app).get.edd.addBaseTasks().saveReport(app.moduleEddPath(this))
-
+      readPersistedFile(app, prefix).get.edd.addBaseTasks().saveReport(app.moduleEddPath(this, prefix))
   }
 
-  private[smv] def readPersistedFile(app: SmvApp): Try[SchemaRDD] = {
+  private[smv] def readPersistedFile(app: SmvApp, prefix: String = ""): Try[SchemaRDD] = {
     // Since on Linux, when file stored on local file system, the partitions are not
     // guaranteed in order when read back in, we need to only store the body w/o the header
     // implicit val ca = CsvAttributes.defaultCsvWithHeader
     implicit val ca = CsvAttributes.defaultCsv
-    Try(app.sqlContext.csvFileWithSchema(app.moduleCsvPath(this)))
+    Try(app.sqlContext.csvFileWithSchema(app.moduleCsvPath(this, prefix)))
+  }
+
+  /**
+   * Create a snapshot in the current module at some result DataFrame.
+   * This is usefull for debugging a long SmvModule by creating snapshots along the way.
+   */
+  def snapshot(df: SchemaRDD, prefix: String) : SchemaRDD = {
+    persist(app, df, prefix)
+    readPersistedFile(app, prefix).get
   }
 
   override def computeRDD(app: SmvApp): SchemaRDD = {

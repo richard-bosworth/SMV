@@ -64,14 +64,14 @@ abstract class SmvApp (val appName: String, private val cmdLineArgs: Seq[String]
   private[smv] val dataDir = sys.env.getOrElse("DATA_DIR", "/DATA_DIR_ENV_NOT_SET")
 
   /** Returns the path for the module's csv output */
-  private[smv] def moduleCsvPath(mod: SmvModule): String =
-    s"""${dataDir}/output/${versionedNameInDev(mod)}.csv"""
+  private[smv] def moduleCsvPath(mod: SmvModule, prefix: String = ""): String =
+    s"""${dataDir}/output/${prefix}${versionedNameInDev(mod)}.csv"""
 
   @inline private def versionedNameInDev(mod: SmvModule): String =
     if (isDevMode) mod.name + "_" + mod.versionSum() else mod.name
 
   /** Returns the path for the module's edd */
-  private[smv] def moduleEddPath(mod: SmvModule): String = moduleCsvPath(mod) + ".edd"
+  private[smv] def moduleEddPath(mod: SmvModule, prefix: String = ""): String = moduleCsvPath(mod, prefix) + ".edd"
 
   /**
    * Get the RDD associated with data set.  The rdd plan (not data) is cached in the SmvDataSet
@@ -163,6 +163,9 @@ abstract class SmvApp (val appName: String, private val cmdLineArgs: Seq[String]
 
     cmdLineArgsConf.modules().foreach { module =>
       val modObject = moduleNametoObject(module)
+
+      // hack to inject app into module being run so it is available during snapshot command.
+      modObject.app = this
 
       if (cmdLineArgsConf.graph()) {
         // TODO: need to combine the modules for graphs into a single graph.
