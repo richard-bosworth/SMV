@@ -71,7 +71,7 @@ abstract class SmvApp (val appName: String, private val cmdLineArgs: Seq[String]
     if (isDevMode) mod.name + "_" + mod.versionSum() else mod.name
 
   /** Returns the path for the module's edd */
-  private[this] def moduleEddPath(mod: SmvModule): String = moduleCsvPath(mod) + ".edd"
+  private[smv] def moduleEddPath(mod: SmvModule): String = moduleCsvPath(mod) + ".edd"
 
   /**
    * Get the RDD associated with data set.  The rdd plan (not data) is cached in the SmvDataSet
@@ -172,9 +172,6 @@ abstract class SmvApp (val appName: String, private val cmdLineArgs: Seq[String]
 
         if (! isDevMode)
           modObject.persist(this, modResult)
-
-        if (cmdLineArgsConf.genEdd())
-          modResult.edd.addBaseTasks().saveReport(moduleEddPath(modObject))
       }
     }
   }

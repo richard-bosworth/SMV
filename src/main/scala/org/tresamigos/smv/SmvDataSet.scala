@@ -35,6 +35,8 @@ import org.joda.time.format._
  */
 abstract class SmvDataSet {
 
+  var app: SmvApp = _
+
   private var rddCache: SchemaRDD = null
   private[smv] var versionSumCache : Int = -1
 
@@ -152,6 +154,13 @@ abstract class SmvModule(val description: String) extends SmvDataSet {
     } else {
       rdd.saveAsCsvWithSchema(filePath)
     }
+
+    // if EDD flag was specified, generate EDD for the just saved file!
+    // Use the "cached" file that was just saved rather than cause an action
+    // on the input RDD which may cause some expensive computation to re-occur.
+    if (app.cmdLineArgsConf.genEdd())
+      readPersistedFile(app).get.edd.addBaseTasks().saveReport(app.moduleEddPath(this))
+
   }
 
   private[smv] def readPersistedFile(app: SmvApp): Try[SchemaRDD] = {
