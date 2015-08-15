@@ -14,6 +14,7 @@
 
 package org.tresamigos.smv
 
+import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.types._
 
 class NullSubTest extends SparkTestUtil {
@@ -28,6 +29,16 @@ class NullSubTest extends SparkTestUtil {
 
     assert(res.collect.map(_(1)) === List(6.0, 5.0))
     assert(fields(1).dataType === DoubleType)
+  }
+}
+
+class SmvSafeDivTest extends SparkTestUtil {
+  sparkTest("test SmvSafeDiv function") {
+    val ssc = sqlContext; import ssc._
+    val srdd = createSchemaRdd("n: Integer; d: Double",
+      "4,2.0; 4,; 4,0")
+    val res = srdd.select(SmvSafeDiv('n, 'd, Literal(100.0)) as 'v)
+    assertSrddDataEqual(res, "2.0;null;100.0")
   }
 }
 

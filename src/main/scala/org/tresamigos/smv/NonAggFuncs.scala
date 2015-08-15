@@ -298,6 +298,46 @@ case class BinFloor(child: Expression, bin: Double) extends UnaryFuncs[Double] {
   }
 }
 
+// TODO: implement safediv here from 1.3
+/**
+ * smvSafeDiv from smv 1.3.
+ *
+ * lit(1.0).smvSafeDiv(lit(0.0), 1000.0) => 1000.0
+ * lit(1.0).smvSafeDiv(lit(null), 1000.0) => null
+ *
+ */
+case class SmvSafeDiv(num: Expression, denom: Expression, defaultv: Expression) extends Expression {
+
+  def children = List(num, denom, defaultv)
+  override def nullable = children.exists(_.nullable)
+
+  override lazy val resolved = childrenResolved
+
+  def dataType = DoubleType
+
+  type EvaluatedType = Any
+
+  override def eval(input: Row): Any = {
+    val n = Cast(num, DoubleType).eval(input).asInstanceOf[Double]
+    val d = Cast(denom, DoubleType).eval(input)
+    if (d == null) {
+      null
+    } else {
+      val dd = d.asInstanceOf[Double]
+      if (dd == 0.0) {
+        val v = Cast(defaultv, DoubleType).eval(input).asInstanceOf[Double]
+        v
+      } else {
+        n / dd
+      }
+    }
+  }
+
+  override def toString = s"SmvSafeDiv(${children.mkString(",")})"
+}
+
+
+
 case class SmvSoundex(child: Expression) extends UnaryFuncs[String] {
   override def toString = s"Soundex( $child )"
   def dataType = StringType
