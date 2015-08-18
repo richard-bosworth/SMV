@@ -318,17 +318,20 @@ case class SmvSafeDiv(num: Expression, denom: Expression, defaultv: Expression) 
   type EvaluatedType = Any
 
   override def eval(input: Row): Any = {
-    val n = Cast(num, DoubleType).eval(input).asInstanceOf[Double]
+    val n = Cast(num, DoubleType).eval(input)
     val d = Cast(denom, DoubleType).eval(input)
-    if (d == null) {
+    if (n == null || d == null) {
       null
     } else {
+      val nd = n.asInstanceOf[Double]
       val dd = d.asInstanceOf[Double]
-      if (dd == 0.0) {
+      if (nd == 0.0) {
+        0.0
+      } else if (dd == 0.0) {
         val v = Cast(defaultv, DoubleType).eval(input).asInstanceOf[Double]
         v
       } else {
-        n / dd
+        nd / dd
       }
     }
   }

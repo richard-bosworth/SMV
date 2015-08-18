@@ -35,10 +35,19 @@ class NullSubTest extends SparkTestUtil {
 class SmvSafeDivTest extends SparkTestUtil {
   sparkTest("test SmvSafeDiv function") {
     val ssc = sqlContext; import ssc._
-    val srdd = createSchemaRdd("n: Integer; d: Double",
-      "4,2.0; 4,; 4,0")
-    val res = srdd.select(SmvSafeDiv('n, 'd, Literal(100.0)) as 'v)
-    assertSrddDataEqual(res, "2.0;null;100.0")
+    val srdd = createSchemaRdd("a:Double;b:Integer", "0.4,5;0,0;,")
+
+    val res = srdd.select(
+      SmvSafeDiv(10.0, 'a, 100),
+      SmvSafeDiv(10.0, 'b, 200),
+      SmvSafeDiv('a, 2.0, 300.0), // to test case where numerator is null
+      SmvSafeDiv('a, 0.0, 400.0)  // to test case where numerator is null/0, denom = 0
+    )
+
+    assertSrddDataEqual(res,
+      "25.0,2.0,0.2,400.0;" +
+        "100.0,200.0,0.0,0.0;" +
+        "null,null,null,null")
   }
 }
 
