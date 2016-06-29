@@ -49,6 +49,8 @@ Please do NOT use scala version 2.11+, because Spark does not yet support its JD
 
 After Scala is downloaded and decompress, add it to PATH and verify Scala installation with
 ```shell
+$ export SCALA_HOME=Scala-install-dir
+$ export PATH=$PATH:$SCALA_HOME/bin
 $ scala -version
 ```
 
